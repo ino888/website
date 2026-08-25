@@ -293,43 +293,37 @@
   .multiembed{ position:absolute; inset:0; z-index:1; display:flex; flex-direction:column; gap:10px; padding:12px; }
   .multiembed[hidden]{ display:none; }
   .multiembed__main{ flex:1; min-height:0; border-radius:var(--radius-md); overflow:hidden; background:#000; position:relative; display:flex; align-items:center; justify-content:center; }
-  /* The strip (other embeds) sits inside a wrapper zone so theater mode can
-     turn it into a fixed-size hover target without touching its own layout. */
+  /* The strip (other embeds) sits inside its own wrapper zone so theater
+     mode can hide just that zone without touching .multiembed's own layout. */
   .multiembed__strip-zone{ flex:0 0 auto; }
   .multiembed__strip{ max-height:132px; display:flex; flex-wrap:wrap; align-content:flex-start; gap:8px; overflow-y:auto; scrollbar-width:thin; }
   .multiembed__strip:empty{ display:none; }
 
   /* ---- Theater mode: full-bleed video, no rounded corners/border/padding
-     around the player. The strip of other embeds is parked just off the
-     bottom edge (clipped by .stream-panel__embed's overflow:hidden) and
-     only slides up into view while the bottom hover zone is hovered. ---- */
+     around the player. The strip of other embeds no longer lives here at
+     all -- hovering the video used to reveal it, but that's now handled by
+     the popover button next to "Signed in as" in the chat panel instead
+     (see .chat-auth-status__embeds-btn / .theater-embeds-popover below). ---- */
   body.theater-mode .multiembed{ padding:0; gap:0; }
   body.theater-mode .multiembed__main{ border-radius:0; }
   body.theater-mode .embed-tile{ border:0; border-radius:0; }
-  body.theater-mode .multiembed__strip-zone{
-    position:absolute; left:0; right:0; bottom:0; height:150px;
-    z-index:6; pointer-events:auto;
-  }
-  body.theater-mode .multiembed__strip{
-    position:absolute; inset:0; max-height:none; width:100%; box-sizing:border-box;
-    margin:0; padding:18px 16px 16px; align-content:flex-end;
-    background:linear-gradient(180deg, transparent, rgba(6,7,9,.9) 62%);
-    transform:translateY(100%); opacity:0; pointer-events:none;
-    transition:transform .28s cubic-bezier(.22,.8,.28,1), opacity .22s ease;
-  }
-  body.theater-mode .multiembed__strip-zone:hover .multiembed__strip{
-    transform:translateY(0); opacity:1; pointer-events:auto;
-  }
+  body.theater-mode .multiembed__strip-zone{ display:none; }
   .embed-tile{ position:relative; border-radius:var(--radius-sm); overflow:hidden; background:#000; border:1px solid var(--border); width:100%; height:100%; }
   .embed-tile__frame{ position:absolute; inset:0; width:100%; height:100%; border:0; }
-  .embed-tile__bar{ position:relative; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:6px; padding:6px 8px; background:linear-gradient(180deg, rgba(6,7,9,.85), transparent); pointer-events:none; }
+  /* The whole bar -- name, platform/"Only you" tag, and the ★/–/✕ action
+     buttons -- stays hidden until this tile is hovered (or a control inside
+     it has keyboard focus), in both normal and theater mode. Keeps the
+     video clean the rest of the time, like a standard player hover-UI. */
+  .embed-tile__bar{ position:relative; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:6px; padding:6px 8px; background:linear-gradient(180deg, rgba(6,7,9,.85), transparent); pointer-events:none; opacity:0; transition:opacity .15s ease; }
+  .embed-tile:hover .embed-tile__bar, .embed-tile:focus-within .embed-tile__bar{ opacity:1; }
   .embed-tile__name{ font-size:13px; font-weight:700; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.7); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .embed-tile__platform{ font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#fff; background:rgba(255,255,255,.16); padding:2px 6px; border-radius:4px; margin-left:6px; flex-shrink:0; }
   /* Shown on the main slot when you're personally previewing something other
      than the shared main stage embed -- everyone else still sees the real
      main; this tag is just to remind you it's a "just for you" view. */
   .embed-tile__platform--preview{ background:var(--accent-soft); color:var(--accent-text); }
-  .embed-tile__actions{ display:flex; gap:4px; flex-shrink:0; pointer-events:auto; }
+  .embed-tile__actions{ display:flex; gap:4px; flex-shrink:0; pointer-events:none; }
+  .embed-tile:hover .embed-tile__actions, .embed-tile:focus-within .embed-tile__actions{ pointer-events:auto; }
   .embed-tile__btn{ width:22px; height:22px; border-radius:5px; background:rgba(20,23,29,.88); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; line-height:1; border:1px solid rgba(255,255,255,.08); }
   .embed-tile__btn:hover{ background:var(--accent); color:#08131c; }
 
@@ -430,12 +424,42 @@
   .auth-submit{ margin-top:4px; }
 
   /* ============ Chat: signed-in status bar ============ */
-  .chat-auth-status{ display:flex; align-items:center; gap:7px; padding:9px 14px; font-size:12.5px; border-top:1px solid var(--border); background:var(--surface-2); }
+  .chat-auth-status{ display:flex; align-items:center; gap:7px; padding:9px 14px; font-size:12.5px; border-top:1px solid var(--border); background:var(--surface-2); position:relative; }
+  /* Wraps the dot/"Signed in as"/prompt content (which renderChatAuthStatus()
+     rewrites wholesale) so the popover button beside it, added below, is
+     never wiped out along with it. */
+  .chat-auth-status__info{ display:flex; align-items:center; gap:7px; min-width:0; flex:1; }
   .chat-auth-status__dot{ width:7px; height:7px; border-radius:50%; background:#3ecf6a; box-shadow:0 0 0 3px rgba(62,207,106,.15); flex-shrink:0; }
-  .chat-auth-status__text{ color:var(--text-dim); }
+  .chat-auth-status__text{ color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .chat-auth-status__name{ color:var(--text); font-weight:700; }
   .chat-auth-status__prompt{ color:var(--accent-text); font-weight:600; font-size:12.5px; }
   .chat-auth-status__prompt:hover{ text-decoration:underline; }
+
+  /* ---- Theater mode: "other streams" popover button, sat at the far side
+     of the "Signed in as" row. Only shown in theater mode -- outside it the
+     strip of other embeds already sits visibly below the main video, so
+     there's nothing to pop out. Opens .theater-embeds-popover over the chat,
+     rather than the old hover-over-the-video strip. ---- */
+  .chat-auth-status__embeds-btn{
+    display:none; align-items:center; justify-content:center; flex-shrink:0;
+    width:26px; height:26px; border-radius:50%; margin-left:auto;
+    color:var(--text-dim); background:var(--surface-hover); border:1px solid var(--border-strong);
+  }
+  .chat-auth-status__embeds-btn:hover{ color:var(--text); background:var(--surface); }
+  .chat-auth-status__embeds-btn.is-active{ color:var(--accent-text); border-color:var(--accent); background:var(--accent-soft); }
+  .chat-auth-status__embeds-btn[hidden]{ display:none !important; }
+  body.theater-mode .chat-auth-status__embeds-btn{ display:inline-flex; }
+
+  .theater-embeds-popover{
+    position:absolute; right:10px; bottom:calc(100% + 8px); z-index:20;
+    width:230px; max-height:260px; overflow-y:auto; scrollbar-width:thin;
+    background:var(--surface); border:1px solid var(--border-strong); border-radius:var(--radius-md);
+    padding:8px; box-shadow:var(--shadow-lg); display:flex; flex-direction:column; gap:6px;
+  }
+  .theater-embeds-popover[hidden]{ display:none; }
+  .theater-embeds-popover__title{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint); padding:2px 4px 4px; }
+  .theater-embeds-popover__list{ display:flex; flex-direction:column; gap:6px; }
+  .theater-embeds-popover__list .embed-chip{ width:100%; }
 </style>
 </head>
 <body>
@@ -880,7 +904,16 @@
           <div class="chat-feed" id="chatFeed" aria-live="polite" aria-relevant="additions"></div>
           <button class="chat-jump" id="chatJumpBtn">New messages ↓</button>
         </div>
-        <div class="chat-auth-status" id="chatAuthStatus"></div>
+        <div class="chat-auth-status" id="chatAuthStatus">
+          <div class="chat-auth-status__info" id="chatAuthStatusInfo"></div>
+          <button type="button" class="chat-auth-status__embeds-btn" id="theaterEmbedsBtn" title="Show other streams" aria-label="Show other streams" aria-haspopup="true" aria-expanded="false" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          </button>
+          <div class="theater-embeds-popover" id="theaterEmbedsPopover" hidden>
+            <div class="theater-embeds-popover__title">Other streams</div>
+            <div class="theater-embeds-popover__list" id="theaterEmbedsList"></div>
+          </div>
+        </div>
         <form class="chat-input-row" id="chatForm">
           <input class="chat-input" id="chatInput" type="text" placeholder="Say something, or type a command…" maxlength="200" autocomplete="off">
           <button class="btn btn--primary btn--icon" type="submit" aria-label="Send message">
@@ -1053,16 +1086,16 @@
     renderChatAuthStatus();
   }
 
-  var chatAuthStatus = document.getElementById('chatAuthStatus');
+  var chatAuthStatusInfo = document.getElementById('chatAuthStatusInfo');
   function renderChatAuthStatus(){
     if (authChecking){
-      chatAuthStatus.innerHTML = '<span class="chat-auth-status__text">Checking your session…</span>';
+      chatAuthStatusInfo.innerHTML = '<span class="chat-auth-status__text">Checking your session…</span>';
     } else if (currentUser){
-      chatAuthStatus.innerHTML =
+      chatAuthStatusInfo.innerHTML =
         '<span class="chat-auth-status__dot"></span>' +
         '<span class="chat-auth-status__text">Signed in as <span class="chat-auth-status__name">' + escapeHtml(currentUser.username) + '</span></span>';
     } else {
-      chatAuthStatus.innerHTML = '<button type="button" class="chat-auth-status__prompt" id="chatAuthPromptBtn">Log in to chat</button>';
+      chatAuthStatusInfo.innerHTML = '<button type="button" class="chat-auth-status__prompt" id="chatAuthPromptBtn">Log in to chat</button>';
       var promptBtn = document.getElementById('chatAuthPromptBtn');
       if (promptBtn) promptBtn.addEventListener('click', function(){ openAuthModal('login'); });
     }
@@ -1314,6 +1347,41 @@
   var embedQuickAddForm = document.getElementById('embedQuickAdd');
   var embedQuickAddInput = document.getElementById('embedQuickAddInput');
   var embedQuickAddPlatform = document.getElementById('embedQuickAddPlatform');
+  var theaterEmbedsBtn = document.getElementById('theaterEmbedsBtn');
+  var theaterEmbedsPopover = document.getElementById('theaterEmbedsPopover');
+  var theaterEmbedsList = document.getElementById('theaterEmbedsList');
+
+  /* ---- Theater mode: "other streams" popover, opened from the button beside
+     "Signed in as". Pops the list of other embeds up over the chat panel at
+     normal size rather than the video hover-reveal it replaces, and stays
+     open until the person picks one (or clicks away / hits Escape). */
+  function openTheaterEmbedsPopover(){
+    theaterEmbedsPopover.hidden = false;
+    theaterEmbedsBtn.classList.add('is-active');
+    theaterEmbedsBtn.setAttribute('aria-expanded', 'true');
+  }
+  function closeTheaterEmbedsPopover(){
+    theaterEmbedsPopover.hidden = true;
+    theaterEmbedsBtn.classList.remove('is-active');
+    theaterEmbedsBtn.setAttribute('aria-expanded', 'false');
+  }
+  theaterEmbedsBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    if (theaterEmbedsPopover.hidden) openTheaterEmbedsPopover(); else closeTheaterEmbedsPopover();
+  });
+  // Picking a stream (watch / ★ / ✕ — any button in the list) closes the
+  // popover; the list itself re-renders via renderEmbeds() right after.
+  theaterEmbedsList.addEventListener('click', function(e){
+    if (e.target.closest('button')) closeTheaterEmbedsPopover();
+  });
+  document.addEventListener('click', function(e){
+    if (!theaterEmbedsPopover.hidden && !theaterEmbedsPopover.contains(e.target) && e.target !== theaterEmbedsBtn && !theaterEmbedsBtn.contains(e.target)){
+      closeTheaterEmbedsPopover();
+    }
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && !theaterEmbedsPopover.hidden) closeTheaterEmbedsPopover();
+  });
 
   function normalizePlatform(p){
     p = (p || '').toLowerCase().trim();
@@ -1651,9 +1719,21 @@
 
     embedMainSlot.innerHTML = '';
     embedStrip.innerHTML = '';
+    theaterEmbedsList.innerHTML = '';
     if (focusedEntry) embedMainSlot.appendChild(buildEmbedTile(focusedEntry, isFocusedMain));
     else if (hasEmbeds) embedMainSlot.appendChild(buildMainPlaceholder());
-    others.forEach(function(e){ embedStrip.appendChild(buildEmbedChip(e, !!(mainEntry && e.id === mainEntry.id))); });
+    others.forEach(function(e){
+      var isMain = !!(mainEntry && e.id === mainEntry.id);
+      // Two separate chip instances (not one node reused) since the same
+      // entry needs to appear both in the normal-mode strip and in the
+      // theater-mode popover at once.
+      embedStrip.appendChild(buildEmbedChip(e, isMain));
+      theaterEmbedsList.appendChild(buildEmbedChip(e, isMain));
+    });
+    // Nothing to pick from -> hide the popover trigger entirely (and close
+    // the popover itself, in case it was left open when the list emptied out).
+    theaterEmbedsBtn.hidden = others.length === 0;
+    if (others.length === 0) closeTheaterEmbedsPopover();
 
     // The nav "Live" badge reflects the *shared* main stage, not a personal
     // preview — it's a site-wide indicator, the same for every visitor.
@@ -1807,6 +1887,7 @@
     document.body.classList.toggle('theater-mode', active);
     theaterModeBtn.setAttribute('aria-pressed', String(active));
     theaterModeBtn.title = active ? 'Exit Theater Mode' : 'Theater Mode';
+    if (!active) closeTheaterEmbedsPopover();
   }
   theaterModeBtn.addEventListener('click', function(){ setTheaterMode(!theaterModeActive); });
   document.addEventListener('keydown', function(e){
