@@ -293,8 +293,33 @@
   .multiembed{ position:absolute; inset:0; z-index:1; display:flex; flex-direction:column; gap:10px; padding:12px; }
   .multiembed[hidden]{ display:none; }
   .multiembed__main{ flex:1; min-height:0; border-radius:var(--radius-md); overflow:hidden; background:#000; position:relative; display:flex; align-items:center; justify-content:center; }
-  .multiembed__strip{ flex:0 0 auto; max-height:132px; display:flex; flex-wrap:wrap; align-content:flex-start; gap:8px; overflow-y:auto; scrollbar-width:thin; }
+  /* The strip (other embeds) sits inside a wrapper zone so theater mode can
+     turn it into a fixed-size hover target without touching its own layout. */
+  .multiembed__strip-zone{ flex:0 0 auto; }
+  .multiembed__strip{ max-height:132px; display:flex; flex-wrap:wrap; align-content:flex-start; gap:8px; overflow-y:auto; scrollbar-width:thin; }
   .multiembed__strip:empty{ display:none; }
+
+  /* ---- Theater mode: full-bleed video, no rounded corners/border/padding
+     around the player. The strip of other embeds is parked just off the
+     bottom edge (clipped by .stream-panel__embed's overflow:hidden) and
+     only slides up into view while the bottom hover zone is hovered. ---- */
+  body.theater-mode .multiembed{ padding:0; gap:0; }
+  body.theater-mode .multiembed__main{ border-radius:0; }
+  body.theater-mode .embed-tile{ border:0; border-radius:0; }
+  body.theater-mode .multiembed__strip-zone{
+    position:absolute; left:0; right:0; bottom:0; height:150px;
+    z-index:6; pointer-events:auto;
+  }
+  body.theater-mode .multiembed__strip{
+    position:absolute; inset:0; max-height:none; width:100%; box-sizing:border-box;
+    margin:0; padding:18px 16px 16px; align-content:flex-end;
+    background:linear-gradient(180deg, transparent, rgba(6,7,9,.9) 62%);
+    transform:translateY(100%); opacity:0; pointer-events:none;
+    transition:transform .28s cubic-bezier(.22,.8,.28,1), opacity .22s ease;
+  }
+  body.theater-mode .multiembed__strip-zone:hover .multiembed__strip{
+    transform:translateY(0); opacity:1; pointer-events:auto;
+  }
   .embed-tile{ position:relative; border-radius:var(--radius-sm); overflow:hidden; background:#000; border:1px solid var(--border); width:100%; height:100%; }
   .embed-tile__frame{ position:absolute; inset:0; width:100%; height:100%; border:0; }
   .embed-tile__bar{ position:relative; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:6px; padding:6px 8px; background:linear-gradient(180deg, rgba(6,7,9,.85), transparent); pointer-events:none; }
@@ -369,6 +394,11 @@
   .user-chip__logout{ width:24px; height:24px; padding:0; border-radius:50%; color:var(--text-faint); display:flex; align-items:center; justify-content:center; }
   .user-chip__logout:hover{ color:var(--text); background:var(--surface-hover); }
   .user-chip__logout svg{ width:14px; height:14px; }
+  /* .btn / .user-chip both set an explicit `display`, which otherwise cancels
+     out the `hidden` attribute (the browser's default `[hidden]{display:none}`
+     UA rule loses to any author rule that also sets `display`) -- these two
+     lines are what actually let JS's `el.hidden = true/false` take effect. */
+  #loginBtn[hidden], .user-chip[hidden]{ display:none; }
 
   /* ============ Auth modal ============ */
   .auth-modal-root{ position:fixed; inset:0; z-index:300; pointer-events:none; display:flex; align-items:center; justify-content:center; padding:20px; }
@@ -760,7 +790,9 @@
         <div class="stream-panel__embed">
           <div class="multiembed" id="multiembed" data-has-main="false" hidden>
             <div class="multiembed__main" id="embedMainSlot"></div>
-            <div class="multiembed__strip" id="embedStrip"></div>
+            <div class="multiembed__strip-zone" id="embedStripZone">
+              <div class="multiembed__strip" id="embedStrip"></div>
+            </div>
           </div>
           <div class="latest-vod" id="latestVod">
             <span class="latest-vod__label">Latest VOD · 18h ago</span>
