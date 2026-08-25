@@ -5,6 +5,9 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./db');
 const authRoutes = require('./routes/auth');
+const chatRoutes = require('./routes/chat');
+const embedsRoutes = require('./routes/embeds');
+const liveRoutes = require('./routes/live');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,6 +18,9 @@ app.use(cookieParser());
 
 // --- API routes ---
 app.use('/api/auth', authRoutes);
+app.use('/api/chat', chatRoutes);     // shared chat history + posting
+app.use('/api/embeds', embedsRoutes); // shared "on screen" stream list + main stage embed
+app.use('/api/live', liveRoutes);     // SSE: pushes chat + embeds updates to every open tab
 
 // --- Static site (the Kestrel page lives one folder up from /server) ---
 const SITE_DIR = path.join(__dirname, '..');

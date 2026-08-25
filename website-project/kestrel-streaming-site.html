@@ -148,11 +148,16 @@
       radial-gradient(circle at 85% 80%, rgba(55,205,143,.10), transparent 45%),
       repeating-linear-gradient(115deg, #10131a 0px, #10131a 2px, #12151c 2px, #12151c 4px);
   }
-  .stream-preview__status{ position:absolute; top:16px; left:16px; z-index:2; }
+  .stream-preview__status{ position:absolute; top:16px; left:16px; z-index:2; transition:opacity .25s ease; }
   .stream-preview__body{ position:relative; z-index:2; padding:22px 26px 26px; margin-top:-64px; background:linear-gradient(180deg, transparent, var(--surface) 65%); }
-  .stream-preview__title{ font-size:22px; font-weight:800; letter-spacing:-.01em; }
-  .stream-preview__sub{ color:var(--text-dim); font-size:14px; margin-top:6px; max-width:520px; }
+  .stream-preview__title{ font-size:22px; font-weight:800; letter-spacing:-.01em; transition:opacity .25s ease; }
+  .stream-preview__sub{ color:var(--text-dim); font-size:14px; margin-top:6px; max-width:520px; transition:opacity .25s ease; }
   .stream-preview__actions{ display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+  /* Mirrors the shared main stage embed here, crossfading in/out -- this is
+     what keeps the home page preview in sync with Big Screen's main embed. */
+  .stream-preview__live{ position:absolute; inset:0; z-index:1; background:#000; opacity:0; transition:opacity .6s ease; pointer-events:none; }
+  .stream-preview__live.is-visible{ opacity:1; pointer-events:auto; }
+  .stream-preview__live iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
 
   /* ============ Section header ============ */
   .homepage-sections-list{ display:flex; flex-direction:column; gap:40px; }
@@ -278,6 +283,10 @@
   .embed-tile__bar{ position:relative; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:6px; padding:6px 8px; background:linear-gradient(180deg, rgba(6,7,9,.85), transparent); pointer-events:none; }
   .embed-tile__name{ font-size:13px; font-weight:700; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.7); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .embed-tile__platform{ font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#fff; background:rgba(255,255,255,.16); padding:2px 6px; border-radius:4px; margin-left:6px; flex-shrink:0; }
+  /* Shown on the main slot when you're personally previewing something other
+     than the shared main stage embed -- everyone else still sees the real
+     main; this tag is just to remind you it's a "just for you" view. */
+  .embed-tile__platform--preview{ background:var(--accent-soft); color:var(--accent-text); }
   .embed-tile__actions{ display:flex; gap:4px; flex-shrink:0; pointer-events:auto; }
   .embed-tile__btn{ width:22px; height:22px; border-radius:5px; background:rgba(20,23,29,.88); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; line-height:1; border:1px solid rgba(255,255,255,.08); }
   .embed-tile__btn:hover{ background:var(--accent); color:#08131c; }
@@ -292,6 +301,9 @@
   .embed-chip__watch:hover .embed-chip__name{ color:var(--accent-text); }
   .embed-chip__name{ font-size:13px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px; }
   .embed-chip__platform{ font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-faint); background:var(--surface-hover); padding:2px 6px; border-radius:4px; flex-shrink:0; }
+  /* Marks whichever chip is the real shared main stage embed, even while
+     you're personally focused on watching a different one. */
+  .embed-chip__platform--main{ background:var(--accent-soft); color:var(--accent-text); }
   .embed-chip__actions{ display:flex; gap:2px; flex-shrink:0; }
   .embed-chip__btn{ width:22px; height:22px; border-radius:50%; color:var(--text-faint); display:flex; align-items:center; justify-content:center; font-size:11px; line-height:1; }
   .embed-chip__btn:hover{ background:var(--danger-soft); color:#ff9599; }
@@ -403,7 +415,7 @@
         <a class="navbar__icon" href="#" aria-label="X" title="X"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z"/></svg></a>
         <a class="navbar__icon" href="#" aria-label="Discord" title="Discord"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.07.07 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.319 13.58.099 18.058a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.061 0a.073.073 0 0 1 .078.01c.12.099.246.198.373.292a.077.077 0 0 1-.006.128 12.3 12.3 0 0 1-1.873.891.076.076 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.548-13.661a.061.061 0 0 0-.031-.029ZM8.02 15.33c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.419 0 1.333-.955 2.419-2.157 2.419Zm7.974 0c-1.182 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.211 0 2.176 1.095 2.157 2.419 0 1.333-.946 2.419-2.157 2.419Z"/></svg></a>
       </div>
-      <button class="btn btn--secondary btn--sm" id="loginBtn">
+      <button class="btn btn--secondary btn--sm" id="loginBtn" hidden>
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg>
         Log In
       </button>
@@ -521,12 +533,13 @@
     <div class="view-pad">
 
       <section class="stream-preview">
-        <div class="stream-preview__media">
-          <span class="badge badge--danger stream-preview__status">Offline</span>
+        <div class="stream-preview__media" id="streamPreviewMedia">
+          <div class="stream-preview__live" id="streamPreviewLive"></div>
+          <span class="badge badge--danger stream-preview__status" id="streamPreviewStatus">Offline</span>
         </div>
         <div class="stream-preview__body">
-          <h2 class="stream-preview__title">Stream is offline</h2>
-          <p class="stream-preview__sub">Next scheduled stream: Thursday, 7:00 PM &mdash; games, debates, and whatever chat decides today.</p>
+          <h2 class="stream-preview__title" id="streamPreviewTitle">Stream is offline</h2>
+          <p class="stream-preview__sub" id="streamPreviewSub">Next scheduled stream: Thursday, 7:00 PM &mdash; games, debates, and whatever chat decides today.</p>
           <div class="stream-preview__actions">
             <button class="btn btn--primary" data-nav="bigscreen">
               <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/></svg>
@@ -967,7 +980,14 @@
   authCloseBtn.addEventListener('click', closeAuthModal);
   authBackdrop.addEventListener('click', closeAuthModal);
 
+  // True until the very first /api/auth/me check below resolves. While
+  // true, nothing in the nav or chat renders a logged-out state, so someone
+  // who's already logged in never sees "Log In" (or "Log in to chat")
+  // flash by before their session cookie is confirmed.
+  var authChecking = true;
+
   function applyLoggedInUI(user){
+    authChecking = false;
     currentUser = user;
     loginBtn.hidden = true;
     userChip.hidden = false;
@@ -976,6 +996,7 @@
     renderChatAuthStatus();
   }
   function applyLoggedOutUI(){
+    authChecking = false;
     currentUser = null;
     loginBtn.hidden = false;
     userChip.hidden = true;
@@ -984,7 +1005,9 @@
 
   var chatAuthStatus = document.getElementById('chatAuthStatus');
   function renderChatAuthStatus(){
-    if (currentUser){
+    if (authChecking){
+      chatAuthStatus.innerHTML = '<span class="chat-auth-status__text">Checking your session…</span>';
+    } else if (currentUser){
       chatAuthStatus.innerHTML =
         '<span class="chat-auth-status__dot"></span>' +
         '<span class="chat-auth-status__text">Signed in as <span class="chat-auth-status__name">' + escapeHtml(currentUser.username) + '</span></span>';
@@ -1067,11 +1090,16 @@
       });
   });
 
-  // On page load, ask the server if we already have a valid session cookie.
+  // On page load, ask the server if we already have a valid session cookie
+  // *before* showing either "Log In" or the signed-in chip -- see
+  // authChecking above.
   fetch('/api/auth/me')
     .then(function(res){ return res.ok ? res.json() : null; })
-    .then(function(data){ if (data && data.user) applyLoggedInUI(data.user); })
-    .catch(function(){ /* server not running / offline preview — stay logged out */ });
+    .then(function(data){
+      if (data && data.user) applyLoggedInUI(data.user);
+      else applyLoggedOutUI();
+    })
+    .catch(function(){ applyLoggedOutUI(); /* server not running / offline preview — stay logged out */ });
 
   /* ===================== Header scroll shadow ===================== */
   var header = document.getElementById('siteHeader');
@@ -1182,14 +1210,25 @@
     if (e.key === 'Escape') closeAddStreamPopover();
   });
 
-  /* ===================== Bigscreen: multistream Kick embed manager =====================
-     State model: embeds = [{ id, username, isMain }]. At most one entry has isMain=true.
-     The main embed renders large in the primary slot; everything else renders as a
-     smaller tile in the strip. Driven by three input paths that all funnel into the
-     same functions: the quick-add form (empty state), the Add Stream popover, and
-     chat commands (add_embed / remove_embed / change_main_embed / remove_main_embed / etc). */
+  /* ===================== Bigscreen: multistream embed manager =====================
+     State model: embeds = [{ id, username, platform, isMain }]. At most one entry has
+     isMain=true — that's the *shared* main stage embed, synced with every other visitor
+     through the server (GET/POST /api/embeds + the 'embeds' SSE event) and mirrored into
+     the home page preview. Driven by three input paths that all funnel into the same
+     functions: the quick-add form (empty state), the Add Stream popover, and chat
+     commands (add_embed / remove_embed / change_main_embed / remove_main_embed / etc).
+
+     Layered on top of that shared state is `focusedId` — which embed *this browser* is
+     currently showing large. It defaults to following the shared main (`followingMain`),
+     but clicking a name in the strip just re-points your own focus locally, with no
+     network call: that's what lets you watch a different embed without switching the
+     main stage embed everyone else sees. The only way to actually change the shared main
+     is the explicit "set as main stage" (★) action or the change_main_embed command. */
   var MAX_EMBEDS = 8;
   var embeds = [];
+  var focusedId = null;
+  var followingMain = true;
+  var EMBEDS_API_AVAILABLE = true; // flips off if a request can't even reach the server, so we fall back to local-only mode for the rest of the session
 
   /* Platform registry. Each entry builds a best-effort embed URL for that platform.
      These follow each platform's general public embed pattern, but exact requirements
@@ -1235,8 +1274,74 @@
     for (var i = 0; i < embeds.length; i++){ if (embeds[i].id === id) return embeds[i]; }
     return null;
   }
+  function findMainEmbed(){
+    return embeds.filter(function(e){ return e.isMain; })[0] || null;
+  }
   function pushCommandMessage(text){
     appendMessage(escapeHtml(text), { cls:'chat-msg--cmd', force:true });
+  }
+
+  /* Sends a mutating request to the shared embed list (add/remove/set
+     main/etc). On success the server's response already contains the full
+     new state, so we apply it directly — we don't wait on the SSE echo for
+     our *own* changes, only other people's. If the API can't be reached at
+     all (server not running / offline preview), falls back to mutating
+     `embeds` locally so the page still works standalone, same as before. */
+  function embedAction(path, body, localFallback){
+    if (!currentUser){
+      pushCommandMessage('⚠ Log in to change what\'s on screen.');
+      openAuthModal('login');
+      return;
+    }
+    if (!EMBEDS_API_AVAILABLE){ localFallback(); return; }
+    fetch('/api/embeds/' + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {})
+    })
+      .then(function(res){ return res.json().then(function(data){ return { ok: res.ok, data: data }; }); })
+      .then(function(result){
+        if (!result.ok){ pushCommandMessage('⚠ ' + (result.data.error || 'That didn\'t work.')); return; }
+        applyEmbedsState(result.data.embeds || [], result.data.note, result.data.version);
+      })
+      .catch(function(){
+        EMBEDS_API_AVAILABLE = false;
+        localFallback();
+      });
+  }
+
+  var lastEmbedsVersion = null;
+  /* Applies a full shared-state snapshot, whether it came from the initial
+     GET, our own POST response, or an 'embeds' SSE broadcast from someone
+     else. `version` dedupes: our own POST response and its SSE echo both
+     describe the same change, so the second one is a harmless no-op. */
+  function applyEmbedsState(newEmbeds, note, version){
+    if (version != null && version === lastEmbedsVersion) return;
+    if (version != null) lastEmbedsVersion = version;
+    embeds = newEmbeds || [];
+    afterEmbedsChanged();
+    if (note) pushCommandMessage('→ ' + note);
+  }
+
+  /* Keeps a browser's personal focus in sync with the shared main *only*
+     while it's following main. If the user deliberately focused elsewhere,
+     someone else changing the shared main leaves their view alone — that's
+     the whole point. Also self-heals if the focused embed disappeared. */
+  function afterEmbedsChanged(){
+    var mainEntry = findMainEmbed();
+    if (followingMain || !findEmbed(focusedId)) focusedId = mainEntry ? mainEntry.id : null;
+    renderEmbeds();
+    syncHomePreview();
+  }
+
+  /* Purely local: swaps what's shown large in *this* browser's main slot.
+     No network call, no effect on the shared main or on anyone else. */
+  function focusEmbed(id){
+    if (!findEmbed(id)) return;
+    focusedId = id;
+    var mainEntry = findMainEmbed();
+    followingMain = !!(mainEntry && mainEntry.id === id);
+    renderEmbeds();
   }
   /* Chat commands take a leading platform word if it's recognized, e.g. "twitch someuser" —
      otherwise the whole argument is treated as a username on Kick, for backwards compatibility. */
@@ -1253,13 +1358,15 @@
     var platform = normalizePlatform(platformRaw);
     if (!username){ pushCommandMessage('Usage: add_embed <platform> <username> — platforms: ' + PLATFORM_KEYS.join(', ')); return; }
     if (!isValidHandle(username)){ pushCommandMessage('⚠ "' + username + '" doesn\'t look like a valid username.'); return; }
-    var id = platform + ':' + username.toLowerCase();
-    if (findEmbed(id)){ pushCommandMessage('→ ' + username + ' (' + PLATFORMS[platform].label + ') is already on screen.'); return; }
-    if (embeds.length >= MAX_EMBEDS){ pushCommandMessage('⚠ Max ' + MAX_EMBEDS + ' streams on screen — remove one first.'); return; }
-    var isFirst = embeds.length === 0;
-    embeds.push({ id:id, username:username, platform:platform, isMain:isFirst });
-    pushCommandMessage('→ Added ' + username + ' (' + PLATFORMS[platform].label + ')' + (isFirst ? ' as the main embed.' : ' to the list.'));
-    renderEmbeds();
+    embedAction('add', { username: username, platform: platform }, function(){
+      var id = platform + ':' + username.toLowerCase();
+      if (findEmbed(id)){ pushCommandMessage('→ ' + username + ' (' + PLATFORMS[platform].label + ') is already on screen.'); return; }
+      if (embeds.length >= MAX_EMBEDS){ pushCommandMessage('⚠ Max ' + MAX_EMBEDS + ' streams on screen — remove one first.'); return; }
+      var isFirst = embeds.length === 0;
+      embeds.push({ id:id, username:username, platform:platform, isMain:isFirst });
+      pushCommandMessage('→ Added ' + username + ' (' + PLATFORMS[platform].label + ')' + (isFirst ? ' as the main embed.' : ' to the list.'));
+      afterEmbedsChanged();
+    });
   }
 
   function removeEmbed(usernameRaw, platformRaw){
@@ -1269,30 +1376,42 @@
     var id = platform + ':' + username.toLowerCase();
     var entry = findEmbed(id);
     if (!entry){ pushCommandMessage('⚠ No embed found for "' + username + '" on ' + PLATFORMS[platform].label + '.'); return; }
-    var wasMain = entry.isMain;
-    embeds = embeds.filter(function(e){ return e.id !== id; });
-    if (wasMain && embeds.length) embeds[0].isMain = true;
-    pushCommandMessage('→ Removed ' + entry.username + '.');
-    renderEmbeds();
+    embedAction('remove', { username: username, platform: platform }, function(){
+      var wasMain = entry.isMain;
+      embeds = embeds.filter(function(e){ return e.id !== id; });
+      if (wasMain && embeds.length) embeds[0].isMain = true;
+      pushCommandMessage('→ Removed ' + entry.username + '.');
+      afterEmbedsChanged();
+    });
   }
 
+  /* Promotes an embed to the *shared* main stage, visible to everyone and
+     mirrored on the home page preview. Also points this browser's own
+     focus at it right away, since asking to promote something is a pretty
+     clear signal you want to be watching it too. */
   function changeMainEmbed(usernameRaw, platformRaw){
     var username = (usernameRaw || '').trim();
     if (!username){ pushCommandMessage('Usage: change_main_embed <username>'); return; }
     var platform = normalizePlatform(platformRaw);
     if (!isValidHandle(username)){ pushCommandMessage('⚠ "' + username + '" doesn\'t look like a valid username.'); return; }
     var id = platform + ':' + username.toLowerCase();
-    var existing = findEmbed(id);
-    if (!existing && embeds.length >= MAX_EMBEDS){ pushCommandMessage('⚠ Max ' + MAX_EMBEDS + ' streams on screen — remove one first.'); return; }
-    embeds.forEach(function(e){ e.isMain = false; });
-    if (existing) existing.isMain = true;
-    else embeds.unshift({ id:id, username:username, platform:platform, isMain:true });
-    pushCommandMessage('→ ' + username + ' (' + PLATFORMS[platform].label + ') is now the main embed.');
-    renderEmbeds();
+    embedAction('main', { username: username, platform: platform }, function(){
+      var existing = findEmbed(id);
+      if (!existing && embeds.length >= MAX_EMBEDS){ pushCommandMessage('⚠ Max ' + MAX_EMBEDS + ' streams on screen — remove one first.'); return; }
+      embeds.forEach(function(e){ e.isMain = false; });
+      if (existing) existing.isMain = true;
+      else embeds.unshift({ id:id, username:username, platform:platform, isMain:true });
+      pushCommandMessage('→ ' + username + ' (' + PLATFORMS[platform].label + ') is now the main embed.');
+      followingMain = true;
+      focusedId = id;
+      afterEmbedsChanged();
+    });
+    followingMain = true;
+    focusedId = id;
   }
 
   function removeMainEmbed(usernameRaw, platformRaw){
-    var currentMain = embeds.filter(function(e){ return e.isMain; })[0];
+    var currentMain = findMainEmbed();
     var username = (usernameRaw || '').trim();
     if (username){
       var platform = normalizePlatform(platformRaw);
@@ -1300,16 +1419,20 @@
       if (!currentMain || currentMain.id !== id){ pushCommandMessage('⚠ ' + username + ' isn\'t the main embed.'); return; }
     }
     if (!currentMain){ pushCommandMessage('⚠ There\'s no main embed to remove.'); return; }
-    currentMain.isMain = false;
-    pushCommandMessage('→ ' + currentMain.username + ' is no longer the main embed — still on the list.');
-    renderEmbeds();
+    embedAction('main/clear', {}, function(){
+      currentMain.isMain = false;
+      pushCommandMessage('→ ' + currentMain.username + ' is no longer the main embed — still on the list.');
+      afterEmbedsChanged();
+    });
   }
 
   function clearEmbeds(){
     if (!embeds.length){ pushCommandMessage('Nothing to clear.'); return; }
-    embeds = [];
-    pushCommandMessage('→ Cleared all embeds.');
-    renderEmbeds();
+    embedAction('clear', {}, function(){
+      embeds = [];
+      pushCommandMessage('→ Cleared all embeds.');
+      afterEmbedsChanged();
+    });
   }
 
   function listEmbeds(){
@@ -1319,12 +1442,15 @@
   }
 
   function showCommandHelp(){
-    pushCommandMessage('Commands — add_embed <platform> <user> · remove_embed <user> · change_main_embed <user> · remove_main_embed · list_embeds · clear_embeds · help — platforms: ' + PLATFORM_KEYS.join(', ') + ' (defaults to kick)');
+    pushCommandMessage('Commands — add_embed <platform> <user> · remove_embed <user> · change_main_embed <user> (sets the shared main stage for everyone) · remove_main_embed · list_embeds · clear_embeds · help — platforms: ' + PLATFORM_KEYS.join(', ') + ' (defaults to kick). Tip: click a name in the strip to watch it yourself without changing the main stage — use ★ to actually make it the main stage.');
   }
 
-  /* Only ever called for the single "main" embed — this is the one and only iframe
-     that actually plays. Everything else is a text-only chip in buildEmbedChip(). */
-  function buildEmbedTile(entry){
+  /* Only ever called for the single focused embed — this is the one and only iframe
+     that actually plays in this browser. Everything else is a text-only chip in
+     buildEmbedChip(). `isSharedMain` tells it whether this is the real shared main
+     stage (everyone sees it, home page preview mirrors it) or just this viewer's
+     personal pick, which changes which action button it offers. */
+  function buildEmbedTile(entry, isSharedMain){
     var tile = document.createElement('div');
     tile.className = 'embed-tile embed-tile--main';
 
@@ -1347,17 +1473,36 @@
     platformTag.className = 'embed-tile__platform';
     platformTag.textContent = platformInfo.label;
     name.appendChild(platformTag);
+    if (!isSharedMain){
+      var previewTag = document.createElement('span');
+      previewTag.className = 'embed-tile__platform embed-tile__platform--preview';
+      previewTag.textContent = 'Only you';
+      previewTag.title = "You're previewing this — everyone else still sees the main stage embed.";
+      name.appendChild(previewTag);
+    }
 
     var actions = document.createElement('div');
     actions.className = 'embed-tile__actions';
-    var stopBtn = document.createElement('button');
-    stopBtn.type = 'button';
-    stopBtn.className = 'embed-tile__btn';
-    stopBtn.title = 'Stop watching';
-    stopBtn.setAttribute('aria-label', 'Stop watching ' + entry.username);
-    stopBtn.textContent = '–';
-    stopBtn.addEventListener('click', function(){ removeMainEmbed(entry.username, entry.platform); });
-    actions.appendChild(stopBtn);
+
+    if (isSharedMain){
+      var stopBtn = document.createElement('button');
+      stopBtn.type = 'button';
+      stopBtn.className = 'embed-tile__btn';
+      stopBtn.title = 'Stop watching';
+      stopBtn.setAttribute('aria-label', 'Stop watching ' + entry.username);
+      stopBtn.textContent = '–';
+      stopBtn.addEventListener('click', function(){ removeMainEmbed(entry.username, entry.platform); });
+      actions.appendChild(stopBtn);
+    } else {
+      var pinBtn = document.createElement('button');
+      pinBtn.type = 'button';
+      pinBtn.className = 'embed-tile__btn';
+      pinBtn.title = 'Set as the main stage for everyone';
+      pinBtn.setAttribute('aria-label', 'Set ' + entry.username + ' as the main stage for everyone');
+      pinBtn.textContent = '★';
+      pinBtn.addEventListener('click', function(){ changeMainEmbed(entry.username, entry.platform); });
+      actions.appendChild(pinBtn);
+    }
 
     var remove = document.createElement('button');
     remove.type = 'button';
@@ -1377,8 +1522,10 @@
 
   /* Secondary embeds show up as a plain-text chip — a name to click, not a live preview.
      Nothing here ever loads an iframe, so entering big screen never kicks off a pile of
-     autoplaying videos; only the one embed promoted to "main" actually plays. */
-  function buildEmbedChip(entry){
+     autoplaying videos; only the one embed focused in the main slot actually plays.
+     Clicking the name just focuses it locally (see focusEmbed) — it never touches the
+     shared main stage. The ★ button is the explicit "make this the shared main" action. */
+  function buildEmbedChip(entry, isSharedMain){
     var platformInfo = PLATFORMS[entry.platform] || PLATFORMS.kick;
     var chip = document.createElement('div');
     chip.className = 'embed-chip';
@@ -1386,7 +1533,7 @@
     var watch = document.createElement('button');
     watch.type = 'button';
     watch.className = 'embed-chip__watch';
-    watch.title = 'Watch ' + entry.username;
+    watch.title = 'Watch ' + entry.username + ' (just for you — the main stage stays put)';
     watch.setAttribute('aria-label', 'Watch ' + entry.username + ' on ' + platformInfo.label);
     var name = document.createElement('span');
     name.className = 'embed-chip__name';
@@ -1396,10 +1543,27 @@
     platformTag.textContent = platformInfo.label;
     watch.appendChild(name);
     watch.appendChild(platformTag);
-    watch.addEventListener('click', function(){ changeMainEmbed(entry.username, entry.platform); });
+    if (isSharedMain){
+      var mainTag = document.createElement('span');
+      mainTag.className = 'embed-chip__platform embed-chip__platform--main';
+      mainTag.textContent = 'Main';
+      mainTag.title = "This is the shared main stage — everyone else's default view.";
+      watch.appendChild(mainTag);
+    }
+    watch.addEventListener('click', function(){ focusEmbed(entry.id); });
 
     var actions = document.createElement('div');
     actions.className = 'embed-chip__actions';
+    if (!isSharedMain){
+      var pin = document.createElement('button');
+      pin.type = 'button';
+      pin.className = 'embed-chip__btn';
+      pin.title = 'Set as the main stage for everyone';
+      pin.setAttribute('aria-label', 'Set ' + entry.username + ' as the main stage for everyone');
+      pin.textContent = '★';
+      pin.addEventListener('click', function(){ changeMainEmbed(entry.username, entry.platform); });
+      actions.appendChild(pin);
+    }
     var remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'embed-chip__btn';
@@ -1423,24 +1587,111 @@
 
   function renderEmbeds(){
     var hasEmbeds = embeds.length > 0;
-    var main = embeds.filter(function(e){ return e.isMain; })[0] || null;
-    var others = embeds.filter(function(e){ return !e.isMain; });
+    var mainEntry = findMainEmbed();
+    // What THIS browser shows large: your focus if it still exists, else the shared main.
+    var focusedEntry = findEmbed(focusedId) || mainEntry;
+    var isFocusedMain = !!(focusedEntry && mainEntry && focusedEntry.id === mainEntry.id);
+    var others = embeds.filter(function(e){ return !focusedEntry || e.id !== focusedEntry.id; });
 
     offlineCard.hidden = hasEmbeds;
     multiembedEl.hidden = !hasEmbeds;
-    multiembedEl.setAttribute('data-has-main', main ? 'true' : 'false');
+    multiembedEl.setAttribute('data-has-main', focusedEntry ? 'true' : 'false');
     latestVod.style.display = hasEmbeds ? 'none' : '';
 
     embedMainSlot.innerHTML = '';
     embedStrip.innerHTML = '';
-    if (main) embedMainSlot.appendChild(buildEmbedTile(main));
+    if (focusedEntry) embedMainSlot.appendChild(buildEmbedTile(focusedEntry, isFocusedMain));
     else if (hasEmbeds) embedMainSlot.appendChild(buildMainPlaceholder());
-    others.forEach(function(e){ embedStrip.appendChild(buildEmbedChip(e)); });
+    others.forEach(function(e){ embedStrip.appendChild(buildEmbedChip(e, !!(mainEntry && e.id === mainEntry.id))); });
 
-    navLiveBadge.style.display = main ? '' : 'none';
-    if (main) streamStatusTitle.textContent = 'Watching ' + main.username;
+    // The nav "Live" badge reflects the *shared* main stage, not a personal
+    // preview — it's a site-wide indicator, the same for every visitor.
+    navLiveBadge.style.display = mainEntry ? '' : 'none';
+    if (focusedEntry) streamStatusTitle.textContent = 'Watching ' + focusedEntry.username + (isFocusedMain ? '' : ' (just for you)');
     else if (hasEmbeds) streamStatusTitle.textContent = embeds.length + ' stream' + (embeds.length > 1 ? 's' : '') + ' on the list';
     else streamStatusTitle.textContent = 'Kestrel is offline';
+  }
+
+  /* ===================== Home page preview <-> shared main stage sync =====================
+     Mirrors the shared main stage embed into the little preview card at the
+     top of the home page, fading smoothly between states, so someone on
+     the home page sees the same "what's live right now" as Big Screen
+     without switching views. This always reflects the *shared* main (never
+     a personal focus pick) since it's the one thing every visitor —
+     including logged-out ones — sees the same. */
+  var streamPreviewLive = document.getElementById('streamPreviewLive');
+  var streamPreviewStatus = document.getElementById('streamPreviewStatus');
+  var streamPreviewTitle = document.getElementById('streamPreviewTitle');
+  var streamPreviewSub = document.getElementById('streamPreviewSub');
+  var homePreviewMainId; // undefined on first run, so the very first sync always applies without a needless fade
+
+  function fadeSwap(el, applyChange){
+    el.style.opacity = '0';
+    setTimeout(function(){
+      applyChange();
+      el.style.opacity = '1';
+    }, 220);
+  }
+  function previewEmbedUrl(entry){
+    var url = (PLATFORMS[entry.platform] || PLATFORMS.kick).embedUrl(entry.username);
+    // Muted on the home page preview -- the Big Screen embed is the one that plays with sound.
+    return url + (url.indexOf('?') === -1 ? '?' : '&') + 'muted=true';
+  }
+  function showLiveHomePreview(mainEntry){
+    var platformInfo = PLATFORMS[mainEntry.platform] || PLATFORMS.kick;
+    streamPreviewLive.classList.remove('is-visible');
+    streamPreviewLive.innerHTML = '';
+    var iframe = document.createElement('iframe');
+    iframe.src = previewEmbedUrl(mainEntry);
+    iframe.title = mainEntry.username + ' on ' + platformInfo.label;
+    iframe.setAttribute('allow', 'autoplay; picture-in-picture');
+    iframe.setAttribute('loading', 'lazy');
+    iframe.setAttribute('frameborder', '0');
+    var revealed = false;
+    function reveal(){ if (revealed) return; revealed = true; streamPreviewLive.classList.add('is-visible'); }
+    iframe.addEventListener('load', reveal);
+    setTimeout(reveal, 2500); // fallback in case the embed's own page never fires 'load'
+    streamPreviewLive.appendChild(iframe);
+  }
+  function hideLiveHomePreview(){
+    streamPreviewLive.classList.remove('is-visible');
+    setTimeout(function(){ streamPreviewLive.innerHTML = ''; }, 600);
+  }
+  function syncHomePreview(){
+    var mainEntry = findMainEmbed();
+    var newMainId = mainEntry ? mainEntry.id : null;
+    if (newMainId === homePreviewMainId) return; // no change, skip the fade
+    homePreviewMainId = newMainId;
+
+    if (mainEntry) showLiveHomePreview(mainEntry); else hideLiveHomePreview();
+
+    var platformInfo = mainEntry ? (PLATFORMS[mainEntry.platform] || PLATFORMS.kick) : null;
+    fadeSwap(streamPreviewStatus, function(){
+      streamPreviewStatus.classList.toggle('badge--live', !!mainEntry);
+      streamPreviewStatus.classList.toggle('badge--danger', !mainEntry);
+      streamPreviewStatus.textContent = mainEntry ? 'Live' : 'Offline';
+    });
+    fadeSwap(streamPreviewTitle, function(){
+      streamPreviewTitle.textContent = mainEntry ? (mainEntry.username + ' is live on ' + platformInfo.label) : 'Stream is offline';
+    });
+    fadeSwap(streamPreviewSub, function(){
+      streamPreviewSub.textContent = mainEntry
+        ? 'Watching now \u2014 jump in and join the chat.'
+        : 'Next scheduled stream: Thursday, 7:00 PM \u2014 games, debates, and whatever chat decides today.';
+    });
+  }
+
+  /* Loads the shared embed state from the server on page load. If the API
+     can't be reached, stays in local-only/offline-preview mode (embeds
+     starts empty, same as the original standalone behavior). */
+  function loadEmbedsState(){
+    fetch('/api/embeds')
+      .then(function(res){ return res.ok ? res.json() : Promise.reject(res); })
+      .then(function(data){ applyEmbedsState(data.embeds || [], null, data.version); })
+      .catch(function(){
+        EMBEDS_API_AVAILABLE = false;
+        afterEmbedsChanged();
+      });
   }
 
   embedQuickAddForm.addEventListener('submit', function(e){
@@ -1474,7 +1725,7 @@
 
   document.getElementById('commandsHelpBtn').addEventListener('click', showCommandHelp);
 
-  renderEmbeds();
+  loadEmbedsState();
 
   /* ===================== Bigscreen: swap panel sides ===================== */
   var bigscreenLayout = document.getElementById('bigscreenLayout');
@@ -1589,11 +1840,90 @@
       openAuthModal('login');
       return;
     }
-    appendMessage('<span class="chat-msg__user" style="color:#4fa8e8">' + escapeHtml(currentUser.username) + ':</span> ' + escapeHtml(val), { cls:'chat-msg--you', force:true });
     chatInput.value = '';
+    sendChatMessage(val);
   });
 
-  pushSystemMessage('Welcome to chat -- be kind, have fun.');
+  var renderedChatIds = {};
+  /* Draws one chat message. `msg.id` (present for anything that came from
+     the server) is used to dedupe: the same message can legitimately reach
+     us twice -- once as our own POST's response, once again via the
+     'chat' SSE broadcast -- and it should only ever be drawn once. */
+  function renderChatMessage(msg, opts){
+    opts = opts || {};
+    if (msg.id){
+      if (renderedChatIds[msg.id]) return;
+      renderedChatIds[msg.id] = true;
+    }
+    var mine = !!(currentUser && msg.username === currentUser.username);
+    appendMessage(
+      '<span class="chat-msg__user" style="color:#4fa8e8">' + escapeHtml(msg.username) + ':</span> ' + escapeHtml(msg.text),
+      { cls: mine ? 'chat-msg--you' : '', force: mine || opts.force }
+    );
+  }
+
+  /* Posts to the shared chat. The message normally shows up for everyone
+     (including you) once the 'chat' SSE broadcast reaches this tab -- one
+     source of truth instead of drawing your own message twice. As a
+     safety net, if that broadcast hasn't shown up shortly after the POST
+     succeeds (SSE blocked by a proxy, etc.), draw it from the POST
+     response instead; the id-based dedupe above makes that safe even if
+     both eventually arrive. If the API is unreachable at all, fall back to
+     a local-only echo so the chat box still works as a same-tab preview. */
+  function sendChatMessage(text){
+    fetch('/api/chat/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text })
+    })
+      .then(function(res){ return res.ok ? res.json() : Promise.reject(res); })
+      .then(function(result){
+        setTimeout(function(){ renderChatMessage(result.message, { force:true }); }, 1200);
+      })
+      .catch(function(){
+        renderChatMessage({ username: currentUser.username, text: text, createdAt: new Date().toISOString() }, { force:true });
+      });
+  }
+
+  function onRemoteChatMessage(msg){
+    renderChatMessage(msg);
+  }
+
+  /* Loads recent shared chat history on page load, so everyone who opens
+     (or refreshes) the site sees the same feed instead of starting empty.
+     Falls back to just the welcome line if the API isn't reachable. */
+  function loadChatHistory(){
+    fetch('/api/chat/messages?limit=50')
+      .then(function(res){ return res.ok ? res.json() : Promise.reject(res); })
+      .then(function(data){ (data.messages || []).forEach(function(msg){ renderChatMessage(msg); }); })
+      .catch(function(){ /* server not running / offline preview */ })
+      .then(function(){ pushSystemMessage('Welcome to chat -- be kind, have fun.'); });
+  }
+
+  /* ===================== Realtime sync (shared chat + shared main stage) =====================
+     One SSE connection delivers new chat messages and shared embed-state
+     changes to every open tab, so everyone watching -- home page or Big
+     Screen -- stays in sync. If the backend isn't reachable this simply
+     never connects, and the page quietly stays in local-only/offline-
+     preview mode, same as the auth check earlier. The browser's built-in
+     EventSource auto-reconnects on drop, so no retry logic is needed here. */
+  function connectRealtime(){
+    if (typeof EventSource === 'undefined') return;
+    var source;
+    try { source = new EventSource('/api/live/stream'); } catch (e) { return; }
+    source.addEventListener('chat', function(e){
+      try { onRemoteChatMessage(JSON.parse(e.data)); } catch (err){}
+    });
+    source.addEventListener('embeds', function(e){
+      try { onRemoteEmbedsState(JSON.parse(e.data)); } catch (err){}
+    });
+  }
+  function onRemoteEmbedsState(data){
+    applyEmbedsState(data.embeds || [], data.note, data.version);
+  }
+
+  loadChatHistory();
+  connectRealtime();
 
 })();
 </script>

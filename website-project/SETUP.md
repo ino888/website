@@ -95,26 +95,59 @@ Access step above (or a typo'd password).
 - Once logged in, the **Log In** button is replaced by your username and a
   logout button in the navbar (with a small green "signed in" dot on the
   avatar), and a **"Signed in as {username}"** status bar appears just
-  above the chat box.
-- The simulated chat — the random fake usernames and auto-generated
-  messages that used to populate the feed — has been removed. Chat is now
-  empty until real people post in it, and you have to be logged in to send
-  a message (logged-out visitors are prompted to log in).
+  above the chat box. The page waits for your session to be confirmed
+  before showing either state, so you never see "Log In" flash by if
+  you're already signed in.
 - Logging in sets a secure, httpOnly cookie, so refreshing the page keeps
   you logged in for 7 days.
 - Passwords are never stored in plain text — only a bcrypt hash.
+
+### Shared chat
+
+Chat is now a real shared feed, backed by MongoDB and pushed live over
+Server-Sent Events (SSE) — one connection per open tab, no extra libraries.
+Anyone visiting the site sees the same messages, in real time, including
+history from before they arrived. You still have to be logged in to send a
+message; logged-out visitors can read chat and are prompted to log in if
+they try to send one.
+
+### Shared "on screen" streams + personal preview
+
+The Big Screen embed list is shared too: everything anyone adds, removes,
+or promotes to the **main stage embed** is stored server-side and pushed
+live to every open tab, the same way chat is. The **main stage embed** is
+also what's mirrored into the home page's stream preview card, crossfading
+in when it goes live and back out when it doesn't — so the home page and
+Big Screen always agree on what's actually live.
+
+On top of that shared state, each viewer can click any name in the strip
+to watch it **just for themselves** — the main slot switches locally,
+tagged "Only you", without touching the shared main stage or anyone else's
+view. The ★ button (on the focused tile or any chip) is the explicit
+"make this the real main stage for everyone" action; a plain click on a
+chip is always local-only.
+
+If the server or database isn't reachable, both chat and the embed list
+quietly fall back to the original local-only, single-tab behavior instead
+of breaking — useful for opening the HTML file on its own as a preview.
 
 ## Where things live
 
 ```
 website-project/
-  kestrel-streaming-site.html   ← the site itself (now with the auth modal wired in)
+  kestrel-streaming-site.html   ← the site itself (auth, shared chat, shared embeds, home preview sync)
   server/
-    server.js                   ← starts everything
+    server.js                   ← starts everything, mounts all the routes below
     db.js                       ← connects to MongoDB Atlas
+    realtime.js                 ← tiny SSE pub/sub used by chat + embeds
     models/User.js               ← the user schema
+    models/ChatMessage.js        ← persisted chat messages
+    models/BroadcastState.js     ← the shared "on screen" embed list (single shared doc)
     routes/auth.js               ← signup / login / logout / me endpoints
-    middleware/requireAuth.js    ← reusable guard for future logged-in-only features
+    routes/chat.js                ← chat history (GET) + posting (POST, requires login)
+    routes/embeds.js              ← shared embed list: get / add / remove / set-main / clear-main / clear
+    routes/live.js                 ← GET /api/live/stream — the SSE endpoint powering realtime sync
+    middleware/requireAuth.js    ← reusable guard for logged-in-only routes
     .env                         ← your real credentials (not committed)
     .env.example                 ← safe template (committed)
 ```
