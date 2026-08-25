@@ -154,8 +154,17 @@
   .stream-preview__sub{ color:var(--text-dim); font-size:14px; margin-top:6px; max-width:520px; transition:opacity .25s ease; }
   .stream-preview__actions{ display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
   /* Mirrors the shared main stage embed here, crossfading in/out -- this is
-     what keeps the home page preview in sync with Big Screen's main embed. */
-  .stream-preview__live{ position:absolute; inset:0; z-index:1; background:#000; opacity:0; transition:opacity .6s ease; pointer-events:none; }
+     what keeps the home page preview in sync with Big Screen's main embed.
+     Sized as a true 16:9 box (not stretched to the wider hero shape) so the
+     embed itself is never squished or cropped -- centered within the hero
+     media area via inset:0 + auto margins, capped so it stays modest rather
+     than ballooning to the full hero width. */
+  .stream-preview__live{
+    position:absolute; inset:0; margin:auto;
+    width:min(78%, 640px); aspect-ratio:16/9;
+    z-index:1; background:#000; opacity:0; transition:opacity .6s ease; pointer-events:none;
+    border-radius:var(--radius-md); overflow:hidden; box-shadow:var(--shadow-md);
+  }
   .stream-preview__live.is-visible{ opacity:1; pointer-events:auto; }
   .stream-preview__live iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
 
@@ -228,6 +237,14 @@
   /* ============ Bigscreen / theater view ============ */
   .bigscreen-layout{ display:flex; height:calc(100vh - var(--header-h)); }
   .bigscreen-layout[data-flipped="true"]{ flex-direction:row-reverse; }
+
+  /* ---- Theater mode: strips away everything except the embed + chat.
+     Toggled via a class on <body> so it can reach both the header (a
+     sibling of the bigscreen layout) and the layout itself in one switch. ---- */
+  body.theater-mode .header{ display:none; }
+  body.theater-mode .bigscreen-layout{ height:100vh; }
+  body.theater-mode .stream-controls{ display:none; }
+  #theaterModeBtn[aria-pressed="true"] svg{ transform:rotate(180deg); }
   .stream-panel{ flex:1; min-width:0; display:flex; flex-direction:column; background:#000; position:relative; }
   .stream-panel__embed{ flex:1; position:relative; overflow:hidden; background:
       radial-gradient(circle at 25% 30%, rgba(79,168,232,.14), transparent 50%),
@@ -808,7 +825,7 @@
           <button class="btn btn--tertiary btn--icon" id="chatRefreshBtn" title="Refresh" aria-label="Refresh chat">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
           </button>
-          <button class="btn btn--tertiary btn--icon" id="theaterModeBtn" title="Cinema Mode" aria-label="Toggle cinema mode">
+          <button class="btn btn--tertiary btn--icon" id="theaterModeBtn" title="Theater Mode" aria-label="Toggle theater mode" aria-pressed="false">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><path d="m17 2-5 5-5-5"/><rect width="20" height="15" x="2" y="7" rx="2"/></svg>
           </button>
           <div class="chat-controls__sep"></div>
@@ -876,6 +893,7 @@
     viewHome.hidden = isBig;
     viewBig.hidden = !isBig;
     footer.style.display = isBig ? 'none' : '';
+    if (!isBig) setTheaterMode(false);
     navItems.forEach(function(el){
       if (el.classList.contains('navbar__item') || el.classList.contains('drawer__item')){
         el.classList.toggle('is-active', el.getAttribute('data-nav') === name);
@@ -1377,9 +1395,10 @@
     var entry = findEmbed(id);
     if (!entry){ pushCommandMessage('⚠ No embed found for "' + username + '" on ' + PLATFORMS[platform].label + '.'); return; }
     embedAction('remove', { username: username, platform: platform }, function(){
-      var wasMain = entry.isMain;
+      // No auto-promotion here either -- removing the main embed leaves the
+      // main stage empty (placeholder shown) even if other embeds remain;
+      // someone has to explicitly ★ one to make it the new main.
       embeds = embeds.filter(function(e){ return e.id !== id; });
-      if (wasMain && embeds.length) embeds[0].isMain = true;
       pushCommandMessage('→ Removed ' + entry.username + '.');
       afterEmbedsChanged();
     });
@@ -1734,16 +1753,33 @@
     bigscreenLayout.setAttribute('data-flipped', String(!flipped));
   });
 
-  /* ===================== Bigscreen: cinema mode (collapse chat) ===================== */
+  /* ===================== Bigscreen: collapse chat (close / FAB) ===================== */
   var chatPanel = document.getElementById('chatPanel');
   var chatFab = document.getElementById('chatFab');
   function setChatCollapsed(collapsed){
     chatPanel.classList.toggle('is-collapsed', collapsed);
     chatFab.classList.toggle('is-visible', collapsed);
   }
-  document.getElementById('theaterModeBtn').addEventListener('click', function(){ setChatCollapsed(true); });
   document.getElementById('chatCloseBtn').addEventListener('click', function(){ setChatCollapsed(true); });
   chatFab.addEventListener('click', function(){ setChatCollapsed(false); });
+
+  /* ===================== Bigscreen: theater mode (embed + chat only) =====================
+     Hides the navbar and the stream-controls bar (Support / Add Stream /
+     Close) via a class on <body>, leaving just the embed panel and the chat
+     panel filling the whole viewport. Pressing the button again restores
+     the normal Big Screen layout; Escape does the same. */
+  var theaterModeBtn = document.getElementById('theaterModeBtn');
+  var theaterModeActive = false;
+  function setTheaterMode(active){
+    theaterModeActive = active;
+    document.body.classList.toggle('theater-mode', active);
+    theaterModeBtn.setAttribute('aria-pressed', String(active));
+    theaterModeBtn.title = active ? 'Exit Theater Mode' : 'Theater Mode';
+  }
+  theaterModeBtn.addEventListener('click', function(){ setTheaterMode(!theaterModeActive); });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && theaterModeActive) setTheaterMode(false);
+  });
 
   /* ===================== Bigscreen: popout (sandboxed preview stub) ===================== */
   document.getElementById('popoutBtn').addEventListener('click', function(e){

@@ -98,9 +98,11 @@ router.post('/remove', requireAuth, async (req, res) => {
     const entry = state.embeds.find((e) => e.id === id);
     if (!entry) return res.status(404).json({ error: `No embed found for "${username}".` });
 
-    const wasMain = entry.isMain;
+    // Deliberately does NOT auto-promote another embed to main when the
+    // main entry is removed -- the main stage should stay empty (an
+    // explicit choice, via "set as main" or change_main_embed) even while
+    // other embeds remain on the list.
     state.embeds = state.embeds.filter((e) => e.id !== id);
-    if (wasMain && state.embeds.length) state.embeds[0].isMain = true;
 
     const note = `${req.username} removed ${entry.username}.`;
     const payload = await saveAndBroadcast(state, req.username, note);
