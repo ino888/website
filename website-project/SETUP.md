@@ -131,6 +131,29 @@ If the server or database isn't reachable, both chat and the embed list
 quietly fall back to the original local-only, single-tab behavior instead
 of breaking — useful for opening the HTML file on its own as a preview.
 
+### Chat emotes (Command Center)
+
+There's no separate "mod" role yet, so this is open to anyone signed in —
+the **Command Center** button next to the chat commands (`?`) button opens
+a panel where anyone can add or remove custom chat emotes. Emotes are
+shared and synced live the same way as chat and the embed list.
+
+Adding one: pick a name (used as `:name:` in chat), a size — **Standard**
+(70×70, for normal square emotes) or **Wide** (384×128, for banner-style
+emotes) — and a PNG or GIF file of any size. The server resizes it down to
+exactly that box with `sharp` before saving it, so uploads can be whatever
+size the source image happens to be; animated GIFs stay animated through
+the resize. Only PNG and GIF are accepted (checked against the file's
+actual contents, not just its name or extension).
+
+Once added, typing `:name:` anywhere in a chat message renders the emote
+inline. `emotes` is also a chat command that lists what's currently
+available.
+
+This adds two new dependencies to `server/`: `multer` (reads the uploaded
+file) and `sharp` (resizes it). Both get installed by the regular
+`npm install` step above — nothing extra to do.
+
 ## Where things live
 
 ```
@@ -143,9 +166,11 @@ website-project/
     models/User.js               ← the user schema
     models/ChatMessage.js        ← persisted chat messages
     models/BroadcastState.js     ← the shared "on screen" embed list (single shared doc)
+    models/Emote.js               ← one doc per chat emote (already resized, stored as a data URL)
     routes/auth.js               ← signup / login / logout / me endpoints
     routes/chat.js                ← chat history (GET) + posting (POST, requires login)
     routes/embeds.js              ← shared embed list: get / add / remove / set-main / clear-main / clear
+    routes/emotes.js               ← shared emotes: get / add (resizes via sharp) / remove — requires login
     routes/live.js                 ← GET /api/live/stream — the SSE endpoint powering realtime sync
     middleware/requireAuth.js    ← reusable guard for logged-in-only routes
     .env                         ← your real credentials (not committed)

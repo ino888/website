@@ -423,6 +423,74 @@
   .auth-error.is-visible{ display:block; }
   .auth-submit{ margin-top:4px; }
 
+  /* ============ Command Center modal (emote management) ============
+     Same modal chrome as .auth-modal-root/.auth-modal, just wider (to fit
+     an emote grid) and with its own class prefix so the two don't couple. */
+  .cc-modal-root{ position:fixed; inset:0; z-index:300; pointer-events:none; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .cc-modal-root .backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.6); opacity:0; transition:opacity .2s ease; }
+  .cc-modal{
+    position:relative; width:100%; max-width:440px; max-height:min(640px,86vh); overflow-y:auto; scrollbar-width:thin;
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg);
+    padding:22px; opacity:0; transform:translateY(10px) scale(.98); transition:opacity .2s ease, transform .2s ease;
+  }
+  .cc-modal-root.is-open{ pointer-events:auto; }
+  .cc-modal-root.is-open .backdrop{ opacity:1; }
+  .cc-modal-root.is-open .cc-modal{ opacity:1; transform:none; }
+  .cc-modal__close{ position:absolute; top:14px; right:14px; }
+  .cc-modal__header{ margin-bottom:16px; padding-right:30px; }
+  .cc-modal__title{ font-size:19px; font-weight:800; letter-spacing:-.01em; }
+  .cc-modal__sub{ font-size:13px; color:var(--text-dim); margin-top:4px; }
+
+  .cc-section__title{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-faint); margin-bottom:10px; }
+  .cc-divider{ height:1px; background:var(--border); margin:18px 0; }
+
+  .cc-emote-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:10px; }
+  .cc-empty{ color:var(--text-faint); font-size:12.5px; padding:6px 2px 2px; }
+  .cc-emote-tile{ position:relative; background:var(--surface-2); border:1px solid var(--border-strong); border-radius:var(--radius-md); padding:8px 6px 7px; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .cc-emote-tile__preview{
+    width:100%; height:56px; border-radius:var(--radius-sm); overflow:hidden; display:flex; align-items:center; justify-content:center;
+    background-image:
+      linear-gradient(45deg, rgba(255,255,255,.06) 25%, transparent 25%), linear-gradient(-45deg, rgba(255,255,255,.06) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(255,255,255,.06) 75%), linear-gradient(-45deg, transparent 75%, rgba(255,255,255,.06) 75%);
+    background-size:12px 12px; background-position:0 0, 0 6px, 6px -6px, -6px 0;
+  }
+  .cc-emote-tile__preview img{ max-width:100%; max-height:100%; object-fit:contain; }
+  .cc-emote-tile__name{ font-size:11px; font-weight:600; color:var(--text-dim); font-family:var(--font-mono); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+  .cc-emote-tile__remove{
+    position:absolute; top:4px; right:4px; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:rgba(20,23,29,.88); color:var(--text-dim); border:1px solid var(--border-strong); font-size:10px; line-height:1;
+  }
+  .cc-emote-tile__remove:hover{ background:var(--danger-soft); color:#ff9599; border-color:transparent; }
+
+  .cc-add-form{ display:flex; flex-direction:column; gap:12px; }
+  .cc-field{ display:flex; flex-direction:column; gap:6px; }
+  .cc-field label{ font-size:12.5px; font-weight:600; color:var(--text-dim); }
+  .cc-field input[type="text"]{ background:var(--surface-2); border:1px solid var(--border-strong); color:var(--text); border-radius:var(--radius-sm); padding:10px 12px; font:inherit; font-size:14px; }
+  .cc-field input[type="text"]:focus{ border-color:var(--accent); }
+  .cc-field input[type="file"]{ font-size:12.5px; color:var(--text-dim); }
+  .cc-hint{ font-size:11.5px; color:var(--text-faint); }
+  .cc-hint code{ background:var(--surface-2); padding:1px 5px; border-radius:4px; font-family:var(--font-mono); color:var(--accent-text); font-size:10.5px; }
+  .cc-error{ display:none; background:var(--danger-soft); color:#ff9599; font-size:13px; padding:9px 11px; border-radius:var(--radius-sm); }
+  .cc-error.is-visible{ display:block; }
+
+  .cc-size-options{ display:flex; gap:8px; }
+  .cc-size-option{ position:relative; flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:9px 6px; border-radius:var(--radius-sm); border:1px solid var(--border-strong); background:var(--surface-2); font-size:12.5px; font-weight:600; color:var(--text-dim); cursor:pointer; }
+  .cc-size-option input{ position:absolute; opacity:0; width:1px; height:1px; }
+  .cc-size-option__dims{ font-size:10.5px; font-weight:500; color:var(--text-faint); font-family:var(--font-mono); }
+  .cc-size-option.is-active{ border-color:var(--accent); background:var(--accent-soft); color:var(--accent-text); }
+  .cc-size-option.is-active .cc-size-option__dims{ color:var(--accent-text); }
+
+  .cc-login-prompt{ text-align:center; padding:6px 4px 2px; }
+  .cc-login-prompt p{ font-size:13px; color:var(--text-dim); margin-bottom:10px; }
+  .cc-login-prompt[hidden]{ display:none; }
+
+  /* ---- Emotes rendered inline in chat text (see linkifyEmotes()). Explicit
+     width/height (from the emote's stored size) avoid layout jumping while
+     an animated GIF loads; max-width:100%/height:auto (inherited from the
+     global `img` rule) is what lets a 384-wide "wide" emote shrink to fit
+     a narrow chat panel instead of overflowing it. ---- */
+  .chat-emote{ display:inline-block; vertical-align:middle; height:auto; border-radius:4px; margin:-2px 1px; }
+
   /* ============ Chat: signed-in status bar ============ */
   .chat-auth-status{ display:flex; align-items:center; gap:7px; padding:9px 14px; font-size:12.5px; border-top:1px solid var(--border); background:var(--surface-2); position:relative; }
   /* Wraps the dot/"Signed in as"/prompt content (which renderChatAuthStatus()
@@ -596,6 +664,73 @@
         </div>
         <button type="submit" class="btn btn--primary btn--full auth-submit" id="signupSubmitBtn">Create Account</button>
       </form>
+    </div>
+  </div>
+
+  <!-- ============ COMMAND CENTER MODAL ============
+       No separate "mod" role exists yet, so this is open to anyone who's
+       signed in — see commandCenterBtn in the chat controls bar. Anyone,
+       logged in or not, can view the emote grid; adding/removing needs to
+       be signed in, same gate as everything else that mutates shared state
+       (see ccLoginPrompt below and applyLoggedInUI/applyLoggedOutUI in the
+       script, which keep this in sync with the rest of the page). -->
+  <div class="cc-modal-root" id="ccModalRoot" aria-hidden="true">
+    <div class="backdrop" id="ccBackdrop"></div>
+    <div class="cc-modal" role="dialog" aria-modal="true" aria-labelledby="ccModalTitle">
+      <button class="btn btn--tertiary btn--icon cc-modal__close" id="ccCloseBtn" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <div class="cc-modal__header">
+        <div class="cc-modal__title" id="ccModalTitle">Command Center</div>
+        <div class="cc-modal__sub">Manage chat emotes — anyone signed in can add or remove one.</div>
+      </div>
+
+      <div class="cc-section">
+        <div class="cc-section__title">Emotes</div>
+        <div class="cc-emote-grid" id="ccEmoteGrid">
+          <div class="cc-empty">No emotes yet — be the first to add one below.</div>
+        </div>
+      </div>
+
+      <div class="cc-divider"></div>
+
+      <div class="cc-section" id="ccAddSection" hidden>
+        <div class="cc-section__title">Add an emote</div>
+        <form class="cc-add-form" id="ccAddForm">
+          <div class="cc-field">
+            <label for="ccEmoteName">Name</label>
+            <input type="text" id="ccEmoteName" maxlength="24" placeholder="e.g. kestrelW" autocomplete="off" required>
+            <span class="cc-hint">Used in chat as <code>:name:</code> — 2–24 characters: letters, numbers, underscores.</span>
+          </div>
+          <div class="cc-field">
+            <label>Size</label>
+            <div class="cc-size-options">
+              <label class="cc-size-option is-active">
+                <input type="radio" name="ccSize" value="standard" checked>
+                <span>Standard</span>
+                <span class="cc-size-option__dims">70×70</span>
+              </label>
+              <label class="cc-size-option">
+                <input type="radio" name="ccSize" value="wide">
+                <span>Wide</span>
+                <span class="cc-size-option__dims">384×128</span>
+              </label>
+            </div>
+          </div>
+          <div class="cc-field">
+            <label for="ccEmoteFile">Image</label>
+            <input type="file" id="ccEmoteFile" accept="image/png,image/gif" required>
+            <span class="cc-hint">PNG or GIF, any size — it's resized to fit automatically. Animated GIFs stay animated.</span>
+          </div>
+          <div class="cc-error" id="ccError"></div>
+          <button type="submit" class="btn btn--primary btn--full" id="ccAddSubmitBtn">Add Emote</button>
+        </form>
+      </div>
+
+      <div class="cc-login-prompt" id="ccLoginPrompt">
+        <p>Log in to add or remove emotes.</p>
+        <button type="button" class="btn btn--secondary btn--sm" id="ccLoginPromptBtn">Log In</button>
+      </div>
     </div>
   </div>
 
@@ -895,6 +1030,9 @@
           <button class="btn btn--tertiary btn--icon" id="commandsHelpBtn" title="Chat commands" aria-label="Show chat commands">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
           </button>
+          <button class="btn btn--tertiary btn--icon" id="commandCenterBtn" title="Command Center" aria-label="Open Command Center — manage chat emotes" aria-haspopup="dialog">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/></svg>
+          </button>
           <div class="chat-controls__spacer"></div>
           <button class="btn btn--tertiary btn--icon" id="chatCloseBtn" title="Close chat" aria-label="Close chat">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -1077,6 +1215,7 @@
     userChipAvatar.textContent = user.username.charAt(0);
     userChipName.textContent = user.username;
     renderChatAuthStatus();
+    renderCCAuthState();
   }
   function applyLoggedOutUI(){
     authChecking = false;
@@ -1084,6 +1223,7 @@
     loginBtn.hidden = false;
     userChip.hidden = true;
     renderChatAuthStatus();
+    renderCCAuthState();
   }
 
   var chatAuthStatusInfo = document.getElementById('chatAuthStatusInfo');
@@ -1560,8 +1700,17 @@
     pushCommandMessage('On the list: ' + text);
   }
 
+  // `emotes` is populated by loadEmotes()/applyEmotesState() further down —
+  // safe to reference here since this only ever runs from a typed chat
+  // command, well after page init has finished.
+  function listEmotes(){
+    var names = Object.keys(emotes).sort();
+    if (!names.length){ pushCommandMessage('No emotes yet — add one from the Command Center.'); return; }
+    pushCommandMessage('Emotes — ' + names.map(function(n){ return ':' + n + ':'; }).join(' '));
+  }
+
   function showCommandHelp(){
-    pushCommandMessage('Commands — add_embed <platform> <user> · remove_embed <user> · change_main_embed <user> (sets the shared main stage for everyone) · remove_main_embed · list_embeds · clear_embeds · help — platforms: ' + PLATFORM_KEYS.join(', ') + ' (defaults to kick). Tip: click a name in the strip to watch it yourself without changing the main stage — use ★ to actually make it the main stage.');
+    pushCommandMessage('Commands — add_embed <platform> <user> · remove_embed <user> · change_main_embed <user> (sets the shared main stage for everyone) · remove_main_embed · list_embeds · clear_embeds · emotes · help — platforms: ' + PLATFORM_KEYS.join(', ') + ' (defaults to kick). Tip: click a name in the strip to watch it yourself without changing the main stage — use ★ to actually make it the main stage. Use the Command Center button (next to this one) to add or remove chat emotes.');
   }
 
   /* Only ever called for the single focused embed — this is the one and only iframe
@@ -1840,6 +1989,7 @@
     remove_main_embed: function(arg){ var p = parsePlatformArg(arg); removeMainEmbed(p.username, p.platform); },
     list_embeds: function(){ listEmbeds(); },
     clear_embeds: function(){ clearEmbeds(); },
+    emotes: function(){ listEmotes(); },
     help: function(){ showCommandHelp(); },
     commands: function(){ showCommandHelp(); }
   };
@@ -1934,6 +2084,196 @@
   chatResize.addEventListener('pointerup', stopResize);
   chatResize.addEventListener('pointercancel', stopResize);
 
+  /* ===================== Command Center (emote management) =====================
+     No separate "mod" role exists in this app yet, so this is open to anyone
+     signed in — see commandCenterBtn next to the chat commands (?) button.
+     State model: `emotes` = { name: {name,size,width,height,mimeType,dataUrl} },
+     kept as an object (not an array) because chat rendering needs fast
+     lookup by name for every message it draws. Synced the same way as the
+     embed list: GET on load, POST/DELETE to mutate, and an 'emotes' SSE
+     event (wired up in connectRealtime() below) so every open tab —
+     including the Command Center grid and anyone's chat feed — agrees on
+     what emotes exist without a page refresh. */
+  var emotes = {};
+
+  var commandCenterBtn = document.getElementById('commandCenterBtn');
+  var ccModalRoot = document.getElementById('ccModalRoot');
+  var ccBackdrop = document.getElementById('ccBackdrop');
+  var ccCloseBtn = document.getElementById('ccCloseBtn');
+  var ccEmoteGrid = document.getElementById('ccEmoteGrid');
+  var ccAddSection = document.getElementById('ccAddSection');
+  var ccLoginPrompt = document.getElementById('ccLoginPrompt');
+  var ccLoginPromptBtn = document.getElementById('ccLoginPromptBtn');
+  var ccAddForm = document.getElementById('ccAddForm');
+  var ccEmoteName = document.getElementById('ccEmoteName');
+  var ccEmoteFile = document.getElementById('ccEmoteFile');
+  var ccSizeRadios = document.querySelectorAll('input[name="ccSize"]');
+  var ccError = document.getElementById('ccError');
+  var ccAddSubmitBtn = document.getElementById('ccAddSubmitBtn');
+
+  function showCCError(msg){
+    ccError.textContent = msg;
+    ccError.classList.add('is-visible');
+  }
+  function hideCCError(){
+    ccError.textContent = '';
+    ccError.classList.remove('is-visible');
+  }
+
+  // Shows the add-emote form once signed in, a "log in" prompt otherwise —
+  // called on modal open and again whenever auth state changes (see
+  // applyLoggedInUI/applyLoggedOutUI above), so a Command Center left open
+  // through a login/logout updates instead of going stale.
+  function renderCCAuthState(){
+    var loggedIn = !!currentUser;
+    ccAddSection.hidden = !loggedIn;
+    ccLoginPrompt.hidden = loggedIn;
+    // Tiles only get a ✕ button while logged in (see emoteTileHtml), so a
+    // login/logout happening while the grid is already drawn needs a
+    // re-render too, not just the add-form/login-prompt swap above.
+    renderEmoteGrid();
+  }
+
+  function emoteTileHtml(e){
+    return (
+      '<div class="cc-emote-tile" data-name="' + e.name + '">' +
+        (currentUser ? '<button type="button" class="cc-emote-tile__remove" data-remove="' + e.name + '" title="Remove :' + e.name + ':" aria-label="Remove :' + e.name + ':">✕</button>' : '') +
+        '<div class="cc-emote-tile__preview"><img src="' + e.dataUrl + '" alt=":' + e.name + ':" width="' + e.width + '" height="' + e.height + '" loading="lazy"></div>' +
+        '<div class="cc-emote-tile__name">:' + e.name + ':</div>' +
+      '</div>'
+    );
+  }
+  function renderEmoteGrid(){
+    var names = Object.keys(emotes).sort();
+    if (!names.length){
+      ccEmoteGrid.innerHTML = '<div class="cc-empty">No emotes yet — be the first to add one below.</div>';
+      return;
+    }
+    ccEmoteGrid.innerHTML = names.map(function(n){ return emoteTileHtml(emotes[n]); }).join('');
+  }
+  // Clicking ✕ on a tile removes that emote; delegated so it keeps working
+  // as renderEmoteGrid() rebuilds the grid's contents wholesale.
+  ccEmoteGrid.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-remove]');
+    if (!btn) return;
+    removeEmote(btn.getAttribute('data-remove'));
+  });
+
+  // Applies a full shared emote list, whether it came from the initial GET,
+  // our own POST/DELETE response, or an 'emotes' SSE broadcast from someone
+  // else — same shape of update as applyEmbedsState() below.
+  function applyEmotesState(list, note){
+    emotes = {};
+    (list || []).forEach(function(e){ emotes[e.name] = e; });
+    renderEmoteGrid();
+    if (note) pushCommandMessage('→ ' + note);
+  }
+
+  // Returns the fetch promise (recovering from any failure inside, so it
+  // never rejects) so init at the bottom of the script can load emotes
+  // *before* chat history renders — otherwise messages sent before this
+  // tab knew about a given emote would show its literal ":name:" text
+  // instead of the image, until the next message using it arrives.
+  function loadEmotes(){
+    return fetch('/api/emotes')
+      .then(function(res){ return res.ok ? res.json() : Promise.reject(res); })
+      .then(function(data){ applyEmotesState(data.emotes || []); })
+      .catch(function(){ /* server not running / offline preview — chat just won't show emote art */ });
+  }
+
+  function openCommandCenter(){
+    renderCCAuthState();
+    hideCCError();
+    ccModalRoot.classList.add('is-open');
+    ccModalRoot.setAttribute('aria-hidden', 'false');
+    document.addEventListener('keydown', onCCKeydown);
+  }
+  function closeCommandCenter(){
+    ccModalRoot.classList.remove('is-open');
+    ccModalRoot.setAttribute('aria-hidden', 'true');
+    document.removeEventListener('keydown', onCCKeydown);
+  }
+  function onCCKeydown(e){ if (e.key === 'Escape') closeCommandCenter(); }
+
+  commandCenterBtn.addEventListener('click', function(){ openCommandCenter(); });
+  ccCloseBtn.addEventListener('click', closeCommandCenter);
+  ccBackdrop.addEventListener('click', closeCommandCenter);
+  ccLoginPromptBtn.addEventListener('click', function(){
+    closeCommandCenter();
+    openAuthModal('login');
+  });
+
+  ccSizeRadios.forEach(function(radio){
+    radio.addEventListener('change', function(){
+      ccSizeRadios.forEach(function(r){ r.closest('.cc-size-option').classList.toggle('is-active', r.checked); });
+    });
+  });
+
+  function resetCCAddForm(){
+    ccAddForm.reset();
+    ccSizeRadios.forEach(function(r, i){ r.closest('.cc-size-option').classList.toggle('is-active', i === 0); });
+  }
+
+  ccAddForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    hideCCError();
+    if (!currentUser){ closeCommandCenter(); openAuthModal('login'); return; }
+
+    var name = ccEmoteName.value.trim().toLowerCase();
+    var sizeInput = document.querySelector('input[name="ccSize"]:checked');
+    var size = sizeInput ? sizeInput.value : 'standard';
+    var file = ccEmoteFile.files[0];
+
+    if (!/^[a-zA-Z0-9_]{2,24}$/.test(name)){ showCCError('Name must be 2–24 characters: letters, numbers, underscores.'); return; }
+    if (emotes.hasOwnProperty(name)){ showCCError('":' + name + ':" already exists — remove it first or pick another name.'); return; }
+    if (!file){ showCCError('Choose a PNG or GIF file.'); return; }
+    if (file.type !== 'image/png' && file.type !== 'image/gif'){ showCCError('Only PNG and GIF images are allowed.'); return; }
+
+    var formData = new FormData();
+    formData.append('name', name);
+    formData.append('size', size);
+    formData.append('file', file);
+
+    setSubmitting(ccAddSubmitBtn, true, 'Add Emote');
+    fetch('/api/emotes', { method: 'POST', body: formData })
+      .then(function(res){ return res.json().then(function(data){ return { ok: res.ok, data: data }; }); })
+      .then(function(result){
+        setSubmitting(ccAddSubmitBtn, false, 'Add Emote');
+        if (!result.ok){ showCCError(result.data.error || 'Could not add that emote.'); return; }
+        applyEmotesState(result.data.emotes || []);
+        resetCCAddForm();
+      })
+      .catch(function(){
+        setSubmitting(ccAddSubmitBtn, false, 'Add Emote');
+        showCCError('Network error — is the server running?');
+      });
+  });
+
+  function removeEmote(name){
+    if (!currentUser){ openAuthModal('login'); return; }
+    fetch('/api/emotes/' + encodeURIComponent(name), { method: 'DELETE' })
+      .then(function(res){ return res.json().then(function(data){ return { ok: res.ok, data: data }; }); })
+      .then(function(result){
+        if (!result.ok){ pushCommandMessage('⚠ ' + (result.data.error || 'Could not remove that emote.')); return; }
+        applyEmotesState(result.data.emotes || [], result.data.note);
+      })
+      .catch(function(){ pushCommandMessage('⚠ Could not reach the server.'); });
+  }
+
+  // Replaces :name: tokens in already-HTML-escaped chat text with the
+  // matching emote's <img>, at the exact size it was resized to. Runs
+  // *after* escapeHtml() on the surrounding text, so this is the only
+  // place raw HTML gets reintroduced into a chat message — safe because
+  // `name` only ever matches [a-zA-Z0-9_] and dataUrl is a server-built
+  // base64 string, neither of which can contain a stray '"' or '<'.
+  function linkifyEmotes(escapedText){
+    return escapedText.replace(/:([a-zA-Z0-9_]{2,24}):/g, function(full, name){
+      var e = emotes[name.toLowerCase()];
+      if (!e) return full;
+      return '<img class="chat-emote" src="' + e.dataUrl + '" alt="' + full + '" title="' + full + '" width="' + e.width + '" height="' + e.height + '">';
+    });
+  }
+
   /* ===================== Live chat ===================== */
   var chatFeed = document.getElementById('chatFeed');
   var chatJumpBtn = document.getElementById('chatJumpBtn');
@@ -2006,7 +2346,7 @@
     }
     var mine = !!(currentUser && msg.username === currentUser.username);
     appendMessage(
-      '<span class="chat-msg__user" style="color:#4fa8e8">' + escapeHtml(msg.username) + ':</span> ' + escapeHtml(msg.text),
+      '<span class="chat-msg__user" style="color:#4fa8e8">' + escapeHtml(msg.username) + ':</span> ' + linkifyEmotes(escapeHtml(msg.text)),
       { cls: mine ? 'chat-msg--you' : '', force: mine || opts.force }
     );
   }
@@ -2066,12 +2406,15 @@
     source.addEventListener('embeds', function(e){
       try { onRemoteEmbedsState(JSON.parse(e.data)); } catch (err){}
     });
+    source.addEventListener('emotes', function(e){
+      try { var data = JSON.parse(e.data); applyEmotesState(data.emotes || [], data.note); } catch (err){}
+    });
   }
   function onRemoteEmbedsState(data){
     applyEmbedsState(data.embeds || [], data.note, data.version);
   }
 
-  loadChatHistory();
+  loadEmotes().then(loadChatHistory);
   connectRealtime();
 
 })();

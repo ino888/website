@@ -7,6 +7,7 @@ const connectDB = require('./db');
 const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
 const embedsRoutes = require('./routes/embeds');
+const emotesRoutes = require('./routes/emotes');
 const liveRoutes = require('./routes/live');
 
 const app = express();
@@ -20,7 +21,8 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/chat', chatRoutes);     // shared chat history + posting
 app.use('/api/embeds', embedsRoutes); // shared "on screen" stream list + main stage embed
-app.use('/api/live', liveRoutes);     // SSE: pushes chat + embeds updates to every open tab
+app.use('/api/emotes', emotesRoutes); // shared chat emotes — anyone signed in can add/remove
+app.use('/api/live', liveRoutes);     // SSE: pushes chat + embeds + emotes updates to every open tab
 
 // --- Static site (the Kestrel page lives one folder up from /server) ---
 const SITE_DIR = path.join(__dirname, '..');
